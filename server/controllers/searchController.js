@@ -2,6 +2,8 @@ import { eventsRepository } from '../repositories/eventsRepository.js';
 import { coreTeamService } from '../services/coreTeamService.js';
 import { activityEventsService } from '../services/activityEventsService.js';
 
+const recentSearches = [];
+
 export const searchController = {
   async search(req, res) {
     try {
@@ -86,9 +88,21 @@ export const searchController = {
       }
 
       const trueTotal = results.length;
-      results = results.slice(0, limit);
+results = results.slice(0, limit);
 
-      return res.json({ results, total: trueTotal, query: q });
+if (!recentSearches.includes(q)) {
+  recentSearches.unshift(q);
+
+  if (recentSearches.length > 10) {
+    recentSearches.pop();
+  }
+}
+
+return res.json({
+  results,
+  total: trueTotal,
+  query: q
+});
     } catch (err) {
       console.error('Search error:', err);
       return res.status(500).json({ error: 'Search failed', results: [], total: 0 });
@@ -128,6 +142,18 @@ export const searchController = {
       return res.status(500).json({ error: 'Failed to fetch trending', trending: [] });
     }
   },
+
+  async recent(req, res) {
+  try {
+    return res.json({
+      recent: recentSearches,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      error: "Failed to fetch recent searches",
+    });
+  }
+},
 
   async recommendations(req, res) {
     try {
